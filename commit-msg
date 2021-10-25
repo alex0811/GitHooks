@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# 匹配提交账户信息
+user_email=`git config user.email`
+if [[ ! $user_email =~ "@gaoding.com" ]]
+then
+    echo "ERROR: Illegal email, please use correct email (eg. xxx@gaoding.com)\
+    \nThe full specification of the Gaoding Commit Message Format can be found at https://doc.huanleguang.com/pages/viewpage.action?pageId=151724152"
+    exit 1
+fi
+
+# 读取 commit 信息
+commit_msg=`cat $1`
+
+# 兼容合并时的 commit 信息，自动为其添加 chore 类型
+# case 1: 同时包含 Merge 和 from
+# case 2: 同时包含 Merge 和 into
+if ([[ $commit_msg =~ "Merge " ]]) && ([[ $commit_msg =~ "from" ]] || [[ $commit_msg =~ "into" ]]); then
+    commit_msg="chore: "$commit_msg
+    echo $commit_msg > $1
+    exit 0
+fi
+
+# 匹配提交内容，过滤类型不匹配的信息
+msg_re="^(feat|fix|docs|style|refactor|perf|test|build|chore)(\(.+\))?: .{1,100}"
+
+if [[ ! $commit_msg =~ $msg_re ]] 
+then
+    echo "ERROR: Illegal commit submission format, please use the correct format:\
+    \nfeat: add comments\
+    \nfix: handle events on blur (close #28)\
+    \nThe full specification of the Gaoding Commit Message Format can be found at https://doc.huanleguang.com/pages/viewpage.action?pageId=151724152"
+
+    # 异常退出
+    exit 1
+fi
